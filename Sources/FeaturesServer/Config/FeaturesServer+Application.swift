@@ -1,37 +1,33 @@
 import Fluent
 import Vapor
 
-public struct FeaturesServerConfigurationStorage: Sendable {
+public struct FeaturesServerConfigurationStorage<Context: Sendable>: Sendable {
     let databaseID: DatabaseID?
-    let registry: FeatureRegistry
+    let registry: FeatureRegistry<Context>
 }
 
 private struct FeaturesServerConfigurationStorageKey: StorageKey {
-    typealias Value = FeaturesServerConfigurationStorage
+    typealias Value = any Sendable
 }
 
 public extension Application {
-    var featuresServer: FeaturesServerConfigurationStorage {
-        get {
-            guard let storage = self.storage[FeaturesServerConfigurationStorageKey.self] else {
-                fatalError("FeaturesServer not configured. Call FeaturesServer.configure first.")
-            }
-            return storage
-        }
-        set {
-            self.storage[FeaturesServerConfigurationStorageKey.self] = newValue
-        }
+    func featuresServerStorage<Context: Sendable>(as _: Context.Type = Context.self) -> FeaturesServerConfigurationStorage<Context>? {
+        storage[FeaturesServerConfigurationStorageKey.self] as? FeaturesServerConfigurationStorage<Context>
+    }
+
+    func setFeaturesServerStorage<Context: Sendable>(_ value: FeaturesServerConfigurationStorage<Context>) {
+        storage[FeaturesServerConfigurationStorageKey.self] = value
     }
 }
 
 public enum FeaturesServer {
-    public static func configure(
+    public static func configure<Context: Sendable>(
         on app: Application,
         config: FeaturesConfiguration,
-        registry: FeatureRegistry,
-        actorResolver: @escaping @Sendable (Request) async throws -> FeaturesRouteActor?
+        registry: FeatureRegistry<Context>,
+        actorResolver: @escaping @Sendable (Request) async throws -> FeaturesRouteContext<Context>?
     ) {
-        app.featuresServer = .init(databaseID: config.databaseID, registry: registry)
+        app.setFeaturesServerStorage(.init(databaseID: config.databaseID, registry: registry))
         app.migrations.add(CreateFeatureOverride())
 
         app.middleware.use(

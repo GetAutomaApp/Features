@@ -2,49 +2,49 @@ import FeaturesShared
 import Fluent
 import Foundation
 
-public struct FeatureService: Sendable {
+public struct FeatureService<Context: Sendable>: Sendable {
     public let db: Database
-    public let registry: FeatureRegistry
+    public let registry: FeatureRegistry<Context>
 
-    public init(db: Database, registry: FeatureRegistry) {
+    public init(db: Database, registry: FeatureRegistry<Context>) {
         self.db = db
         self.registry = registry
     }
 
-    public func resolve(subject: FeatureSubject) async throws -> [String: Bool] {
+    public func resolve(subjectId: UUID, context: Context) async throws -> [String: Bool] {
         let overrideRows = try await FeatureOverride.query(on: db)
-            .filter(\.$subjectId == subject.id)
+            .filter(\.$subjectId == subjectId)
             .filter(\.$latest == true)
             .all()
 
         let overrideMap = Dictionary(uniqueKeysWithValues: overrideRows.map { ($0.featureKey, $0.enabled) })
-        let context = FeatureContext(subject: subject, now: Date())
+        let featureContext = FeatureContext(subjectId: subjectId, context: context, now: Date())
 
         var result: [String: Bool] = [:]
         for feature in registry.features {
             if let overridden = overrideMap[feature.key.rawValue] {
                 result[feature.key.rawValue] = overridden
             } else {
-                result[feature.key.rawValue] = feature.active(context)
+                result[feature.key.rawValue] = feature.active(featureContext)
             }
         }
         return result
     }
 
-    public func debug(subject: FeatureSubject) async throws -> [FeatureDebugResultDTO] {
+    public func debug(subjectId: UUID, context: Context) async throws -> [FeatureDebugResultDTO] {
         let overrideRows = try await FeatureOverride.query(on: db)
-            .filter(\.$subjectId == subject.id)
+            .filter(\.$subjectId == subjectId)
             .filter(\.$latest == true)
             .all()
 
         let overrideMap = Dictionary(uniqueKeysWithValues: overrideRows.map { ($0.featureKey, $0.enabled) })
-        let context = FeatureContext(subject: subject, now: Date())
+        let featureContext = FeatureContext(subjectId: subjectId, context: context, now: Date())
 
         return registry.features.map { feature in
             if let overridden = overrideMap[feature.key.rawValue] {
                 return FeatureDebugResultDTO(key: feature.key.rawValue, enabled: overridden, source: "override")
             }
-            return FeatureDebugResultDTO(key: feature.key.rawValue, enabled: feature.active(context), source: "code")
+            return FeatureDebugResultDTO(key: feature.key.rawValue, enabled: feature.active(featureContext), source: "code")
         }
     }
 

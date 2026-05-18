@@ -13,12 +13,14 @@ public struct FeaturesConfiguration: Sendable {
     }
 }
 
-public struct FeaturesRouteActor: Sendable {
-    public let subject: FeatureSubject
+public struct FeaturesRouteContext<Context: Sendable>: Sendable {
+    public let subjectId: UUID
+    public let context: Context
     public let changedBy: String
 
-    public init(subject: FeatureSubject, changedBy: String) {
-        self.subject = subject
+    public init(subjectId: UUID, context: Context, changedBy: String) {
+        self.subjectId = subjectId
+        self.context = context
         self.changedBy = changedBy
     }
 }

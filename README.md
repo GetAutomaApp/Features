@@ -40,7 +40,7 @@ Inside your app `configure.swift`:
 
 1. Register your app DB.
 2. Build a `FeatureRegistry` with `active(ctx)` closures.
-3. Call `FeaturesServer.configure(on:config:registry:actorResolver:)`.
+3. Call `FeaturesServer.configure(on:config:registry:actorResolver:)` with your app-defined context type.
 4. Pass your auth middleware through `FeaturesConfiguration(authMiddleware:)`.
 
 `FeaturesServer.configure` automatically registers the feature override migration.

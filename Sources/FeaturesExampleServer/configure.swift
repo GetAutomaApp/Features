@@ -4,20 +4,30 @@ import Fluent
 import FluentSQLiteDriver
 import Vapor
 
+struct ExampleFeatureContext: Sendable {
+    let plan: String
+    let isInternal: Bool
+    let countryCode: String
+    let level: Int
+}
+
 func configure(_ app: Application) async throws {
     app.databases.use(.sqlite(.file("db.sqlite")), as: .sqlite)
 
     app.migrations.add(CreateUser())
 
-    let registry = FeatureRegistry(features: [
+    let registry = FeatureRegistry<ExampleFeatureContext>(features: [
         .init(key: FeatureKey(rawValue: "new_checkout"), canToggleOnClient: true, active: { ctx in
-            if ctx.subject.isInternal {
+            if ctx.context.isInternal {
                 return true
             }
-            return FeatureBucketing.bucket(subjectId: ctx.subject.id, featureKey: FeatureKey(rawValue: "new_checkout")) < 30
+            if ctx.context.countryCode == "ZA" && ctx.context.level >= 5 {
+                return true
+            }
+            return FeatureBucketing.bucket(subjectId: ctx.subjectId, featureKey: FeatureKey(rawValue: "new_checkout")) < 30
         }),
         .init(key: FeatureKey(rawValue: "pro_feature"), canToggleOnClient: false, active: { ctx in
-            ctx.subject.plan == "pro"
+            ctx.context.plan == "pro"
         }),
     ])
 
@@ -32,13 +42,16 @@ func configure(_ app: Application) async throws {
                 return nil
             }
 
+            let context = ExampleFeatureContext(
+                plan: user.plan,
+                isInternal: user.isInternal,
+                countryCode: user.countryCode,
+                level: user.level
+            )
+
             return .init(
-                subject: .init(
-                    id: user.id,
-                    plan: user.plan,
-                    isInternal: user.isInternal,
-                    attributes: ["name": user.name]
-                ),
+                subjectId: user.id,
+                context: context,
                 changedBy: user.id.uuidString
             )
         }
@@ -55,6 +68,8 @@ struct MockAuthedUser: Sendable {
     let name: String
     let plan: String
     let isInternal: Bool
+    let countryCode: String
+    let level: Int
 }
 
 struct MockAuthUserKey: StorageKey {
@@ -78,7 +93,9 @@ struct MockAuthMiddleware: AsyncMiddleware {
             id: try user.requireID(),
             name: user.name,
             plan: user.plan,
-            isInternal: user.isInternal
+            isInternal: user.isInternal,
+            countryCode: "ZA",
+            level: user.plan == "pro" ? 10 : 3
         )
 
         return try await next.respond(to: req)
