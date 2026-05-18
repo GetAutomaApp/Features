@@ -1,18 +1,46 @@
-# Base
-Automa's Base Repository used for everything!
+# Features
 
-# Setup
+Feature rollout + experimentation package for Vapor.
 
-Run the following commands to setup the base of this REPO:
+## Targets
+
+- `FeaturesServer`: evaluation, overrides (with audit history), middleware, and routes.
+- `FeaturesClient`: lightweight API client for fetching and toggling features.
+- `FeaturesAdmin`: scaffold target (not implemented yet).
+- `FeaturesShared`: DTOs and shared feature key/value types.
+
+## Example App
+
+`FeaturesExampleServer` uses Vapor + Fluent + SQLite and wires the package in `configure.swift`.
+
+Run server:
+
 ```bash
-git clone --recurse-submodules --remote-submodules https://github.com/GetAutomaApp/Base.git
-cd Base
-npm run install:all
+swift run FeaturesExampleServer serve --hostname 127.0.0.1 --port 8080
 ```
 
-> [!NOTE]
-> This is a template repo, add any other initialization steps here please!
+Seeded users:
 
-> [!WARNING]
-> This REPO uses the GPL-3.0 license, this license only applies if you modify this template and intend to use this as a template repo!
-> If this repo is applied as a new project, feel free to close source it!
+- `11111111-1111-1111-1111-111111111111` (free)
+- `22222222-2222-2222-2222-222222222222` (pro)
+- `33333333-3333-3333-3333-333333333333` (internal)
+
+Call routes:
+
+```bash
+curl -s -H 'x-user-id: 11111111-1111-1111-1111-111111111111' http://127.0.0.1:8080/features
+curl -s -H 'x-user-id: 11111111-1111-1111-1111-111111111111' -H 'content-type: application/json' -d '{"key":"new_checkout","enabled":true}' http://127.0.0.1:8080/features/toggle
+curl -s -H 'x-user-id: 11111111-1111-1111-1111-111111111111' http://127.0.0.1:8080/features/debug
+curl -s -H 'x-user-id: 11111111-1111-1111-1111-111111111111' http://127.0.0.1:8080/game
+```
+
+## Integration Pattern
+
+Inside your app `configure.swift`:
+
+1. Register your app DB.
+2. Build a `FeatureRegistry` with `active(ctx)` closures.
+3. Call `FeaturesServer.configure(on:config:registry:actorResolver:)`.
+4. Pass your auth middleware through `FeaturesConfiguration(authMiddleware:)`.
+
+`FeaturesServer.configure` automatically registers the feature override migration.
