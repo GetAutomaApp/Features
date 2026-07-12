@@ -20,7 +20,7 @@ public struct FeaturesClient: Sendable {
         var request = URLRequest(url: baseURL.appending(path: "features"))
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(try await authTokenProvider())", forHTTPHeaderField: "Authorization")
+        request.setValue(try await authTokenProvider(), forHTTPHeaderField: "Authorization")
 
         let (data, response) = try await session.data(for: request)
         try ensureSuccess(response: response, data: data)
@@ -33,7 +33,7 @@ public struct FeaturesClient: Sendable {
         var request = URLRequest(url: baseURL.appending(path: "features/toggle"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(try await authTokenProvider())", forHTTPHeaderField: "Authorization")
+        request.setValue(try await authTokenProvider(), forHTTPHeaderField: "Authorization")
         request.httpBody = try JSONEncoder().encode(ClientFeatureToggleRequestDTO(key: key.rawValue, enabled: enabled))
 
         let (data, response) = try await session.data(for: request)

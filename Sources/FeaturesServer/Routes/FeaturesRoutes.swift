@@ -12,14 +12,19 @@ enum FeaturesRoutes {
     static func register<Context: Sendable>(
         app: Application,
         config: FeaturesConfiguration,
-        registry: FeatureRegistry<Context>
+        registry: FeatureRegistry<Context>,
+        featureEvaluationMiddleware: FeatureEvaluationMiddleware<Context>
     ) {
-        let group = app.grouped(config.authMiddleware).grouped(config.routePrefix)
+        var authenticated: any RoutesBuilder = app
+        for middleware in config.authMiddleware {
+            authenticated = authenticated.grouped(middleware)
+        }
+
+        let group = authenticated
+            .grouped(featureEvaluationMiddleware)
+            .grouped(config.routePrefix)
 
         group.get(use: getFeatures)
-        group.get("debug", use: { req in
-            try await debugFeatures(req: req, contextType: Context.self)
-        })
         group.post("toggle", use: { req in
             try await toggleFeature(req: req, config: config, registry: registry)
         })
@@ -30,19 +35,6 @@ enum FeaturesRoutes {
             FeatureValueDTO(key: key, enabled: req.features[key] ?? false)
         }
         return .init(features: sortedFeatures)
-    }
-
-    static func debugFeatures<Context: Sendable>(req: Request, contextType _: Context.Type) async throws -> [FeatureDebugResultDTO] {
-        guard let routeContext = req.featureRouteContext(as: Context.self) else {
-            throw Abort(.unauthorized)
-        }
-
-        guard let featuresServer = req.application.featuresServerStorage(as: Context.self) else {
-            throw Abort(.internalServerError, reason: "FeaturesServer storage not configured for context type")
-        }
-
-        let service = FeatureService(db: req.db(featuresServer.databaseID), registry: featuresServer.registry)
-        return try await service.debug(subjectId: routeContext.subjectId, context: routeContext.context)
     }
 
     static func toggleFeature<Context: Sendable>(

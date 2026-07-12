@@ -30,7 +30,6 @@ Call routes:
 ```bash
 curl -s -H 'x-user-id: 11111111-1111-1111-1111-111111111111' http://127.0.0.1:8080/features
 curl -s -H 'x-user-id: 11111111-1111-1111-1111-111111111111' -H 'content-type: application/json' -d '{"key":"new_checkout","enabled":true}' http://127.0.0.1:8080/features/toggle
-curl -s -H 'x-user-id: 11111111-1111-1111-1111-111111111111' http://127.0.0.1:8080/features/debug
 curl -s -H 'x-user-id: 11111111-1111-1111-1111-111111111111' http://127.0.0.1:8080/game
 ```
 

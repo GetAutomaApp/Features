@@ -39,15 +39,3 @@ public struct ClientFeatureToggleRequestDTO: Codable, Sendable {
         self.enabled = enabled
     }
 }
-
-public struct FeatureDebugResultDTO: Codable, Sendable {
-    public let key: String
-    public let enabled: Bool
-    public let source: String
-
-    public init(key: String, enabled: Bool, source: String) {
-        self.key = key
-        self.enabled = enabled
-        self.source = source
-    }
-}

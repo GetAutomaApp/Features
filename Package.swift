@@ -11,7 +11,6 @@ let package = Package(
         .library(name: "FeaturesShared", targets: ["FeaturesShared"]),
         .library(name: "FeaturesServer", targets: ["FeaturesServer"]),
         .library(name: "FeaturesClient", targets: ["FeaturesClient"]),
-        .library(name: "FeaturesAdmin", targets: ["FeaturesAdmin"]),
         .executable(name: "FeaturesExampleServer", targets: ["FeaturesExampleServer"]),
         .executable(name: "FeaturesExampleClient", targets: ["FeaturesExampleClient"])
     ],
@@ -31,7 +30,6 @@ let package = Package(
             ]
         ),
         .target(name: "FeaturesClient", dependencies: ["FeaturesShared"]),
-        .target(name: "FeaturesAdmin", dependencies: []),
         .executableTarget(
             name: "FeaturesExampleServer",
             dependencies: [

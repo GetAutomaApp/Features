@@ -30,14 +30,17 @@ public enum FeaturesServer {
         app.setFeaturesServerStorage(.init(databaseID: config.databaseID, registry: registry))
         app.migrations.add(CreateFeatureOverride())
 
-        app.middleware.use(
-            FeatureEvaluationMiddleware(
-                registry: registry,
-                databaseID: config.databaseID,
-                actorResolver: actorResolver
-            )
+        let featureEvaluationMiddleware = FeatureEvaluationMiddleware(
+            registry: registry,
+            databaseID: config.databaseID,
+            actorResolver: actorResolver
         )
 
-        FeaturesRoutes.register(app: app, config: config, registry: registry)
+        FeaturesRoutes.register(
+            app: app,
+            config: config,
+            registry: registry,
+            featureEvaluationMiddleware: featureEvaluationMiddleware
+        )
     }
 }

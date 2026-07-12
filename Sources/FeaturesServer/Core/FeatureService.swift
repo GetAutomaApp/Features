@@ -31,23 +31,6 @@ public struct FeatureService<Context: Sendable>: Sendable {
         return result
     }
 
-    public func debug(subjectId: UUID, context: Context) async throws -> [FeatureDebugResultDTO] {
-        let overrideRows = try await FeatureOverride.query(on: db)
-            .filter(\.$subjectId == subjectId)
-            .filter(\.$latest == true)
-            .all()
-
-        let overrideMap = Dictionary(uniqueKeysWithValues: overrideRows.map { ($0.featureKey, $0.enabled) })
-        let featureContext = FeatureContext(subjectId: subjectId, context: context, now: Date())
-
-        return registry.features.map { feature in
-            if let overridden = overrideMap[feature.key.rawValue] {
-                return FeatureDebugResultDTO(key: feature.key.rawValue, enabled: overridden, source: "override")
-            }
-            return FeatureDebugResultDTO(key: feature.key.rawValue, enabled: feature.active(featureContext), source: "code")
-        }
-    }
-
     public func applyOverride(
         subjectId: UUID,
         key: String,

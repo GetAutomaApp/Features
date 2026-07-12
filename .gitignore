@@ -2,3 +2,5 @@
 .swiftformat
 
 .build
+.swiftpm/xcode
+db.sqlite

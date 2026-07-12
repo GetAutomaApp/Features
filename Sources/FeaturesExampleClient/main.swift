@@ -9,7 +9,7 @@ struct FeaturesExampleClient {
         let userID = ProcessInfo.processInfo.environment["FEATURES_USER_ID"] ?? "11111111-1111-1111-1111-111111111111"
 
         let client = FeaturesClient(baseURL: server) {
-            "dev-token"
+            "Bearer \(userID)"
         }
 
         print("Using user: \(userID)")
